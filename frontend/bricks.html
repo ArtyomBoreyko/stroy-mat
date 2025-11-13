@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кирпичи керамические - СтройМат</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <img src="img/logo.png" alt="Логотип СтройМат" class="logo">
+            <nav>
+                <ul>
+                    <li><a href="index.html">О нас</a></li>
+                    <li><a href="goods.html">Товары</a></li>
+                </ul>
+            </nav>
+
+             <div class="user-area">
+                <button id="loginBtn" class="btn-primary small">Войти</button>
+                <button id="registerBtn" class="btn-secondary small">Регистрация</button>
+                <span id="userName" style="display:none; margin-left:10px; color: #fff;"></span>
+                <button id="logoutBtn" class="btn-secondary small" style="display:none; margin-left:10px;">Выйти</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h1>Кирпичи керамические полнотелые</h1>
+        
+        <div class="product-info">
+            <img src="img/kirpich.png" alt="Кирпичная кладка" style="width:100%; max-width:600px; border-radius:10px;">
+            
+            <h2>Описание</h2>
+            <p>Керамические полнотелые кирпичи — традиционный строительный материал для возведения несущих стен и перегородок. Обладают высокой морозостойкостью и прочностью, подходят для наружных и внутренних работ.</p>
+            
+            <h2>Состав</h2>
+            <p>Обожженная глина с добавками для улучшения пластичности, без пустот (полнотелый тип).</p>
+            
+            <h2>Применение</h2>
+            <ul>
+                <li>Несущие стены зданий</li>
+                <li>Перегородки и фасады</li>
+                <li>Фундаменты и цоколи</li>
+                <li>Декоративная кладка</li>
+            </ul>
+            
+            <h2>Характеристики</h2>
+            <ul>
+                <li>Марка прочности: М125</li>
+                <li>Размер: 250x120x65 мм</li>
+                <li>Цена: 25 руб/шт</li>
+                <li>Вес: 2.5 кг/шт</li>
+                <li>Производитель: "Кирпичный завод"</li>
+            </ul>
+
+            <p>Цена: 25 руб/шт</p>
+            <div style="margin-top:12px;">
+                <button class="btn-primary buy-single" data-id="bricks" data-name="Кирпичи керамические">Купить</button>
+            </div>
+            
+            <h2>Технические характеристики</h2>
+            <table style="width:100%; border-collapse: collapse; margin:20px 0;">
+                <tr><th style="border:1px solid #ddd; padding:10px; background:#f2f2f2;">Параметр</th><th style="border:1px solid #ddd; padding:10px; background:#f2f2f2;">Значение</th></tr>
+                <tr><td style="border:1px solid #ddd; padding:10px;">Прочность на сжатие</td><td style="border:1px solid #ddd; padding:10px;">12.5 МПа</td></tr>
+                <tr><td style="border:1px solid #ddd; padding:10px;">Морозостойкость</td><td style="border:1px solid #ddd; padding:10px;">F50</td></tr>
+                <tr><td style="border:1px solid #ddd; padding:10px;">Водопоглощение</td><td style="border:1px solid #ddd; padding:10px;">14%</td></tr>
+                <tr><td style="border:1px solid #ddd; padding:10px;">Теплопроводность</td><td style="border:1px solid #ddd; padding:10px;">0.6 Вт/м·К</td></tr>
+            </table>
+        </div>
+        
+        <p><a href="goods.html" style="background: #95a5a6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Вернуться в каталог</a></p>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 СтройМат. Все права защищены.</p>
+    </footer>
+
+        <!-- ===== Login Modal ===== -->
+    <div id="loginModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-login" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+        <button class="modal-close" aria-label="Закрыть модальное окно">
+        <!-- SVG крестик -->
+        <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <path d="M3 3 L17 17 M17 3 L3 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        </button>
+        <h3 id="loginTitle" class="modal-title">Войти в аккаунт</h3>
+        <form id="loginForm" class="auth-form" novalidate>
+        <label>Эл. почта
+            <input type="email" id="loginEmail" required>
+        </label>
+        <label>Пароль
+            <input type="password" id="loginPassword" required>
+        </label>
+        <button type="submit" class="btn-primary">Войти</button>
+        </form>
+        <div id="loginMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- ===== Register Modal ===== -->
+    <div id="registerModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-register" role="dialog" aria-modal="true" aria-labelledby="regTitle">
+        <button class="modal-close" aria-label="Закрыть модальное окно">
+        <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <path d="M3 3 L17 17 M17 3 L3 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        </button>
+        <h3 id="regTitle" class="modal-title">Создать аккаунт</h3>
+        <form id="registerForm" class="auth-form" novalidate>
+        <label>Имя
+            <input type="text" id="regName" required>
+        </label>
+        <label>Эл. почта
+            <input type="email" id="regEmail" required>
+        </label>
+        <label>Пароль
+            <input type="password" id="regPassword" required>
+        </label>
+        <label>Подтвердите пароль
+            <input type="password" id="regPassword2" required>
+        </label>
+        <button type="submit" class="btn-primary">Зарегистрироваться</button>
+        </form>
+        <div id="registerMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- ===== Purchase Modal ===== -->
+    <div id="purchaseModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-purchase" role="dialog" aria-modal="true" aria-labelledby="purchaseTitle">
+        <button class="modal-close" aria-label="Закрыть модальное окно">
+        <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <path d="M3 3 L17 17 M17 3 L3 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        </button>
+        <h3 id="purchaseTitle" class="modal-title">Оформление заказа</h3>
+
+        <form id="purchaseForm" novalidate>
+        <input type="hidden" id="purchaseProductId">
+        <label>Товар
+            <input type="text" id="purchaseProductName" readonly>
+        </label>
+        <label>Количество
+            <input type="number" id="purchaseQty" min="1" value="1" required>
+        </label>
+        <label>Имя покупателя
+            <input type="text" id="purchaseName" required>
+        </label>
+        <label>Телефон
+            <input type="tel" id="purchasePhone" required>
+        </label>
+        <label>Адрес доставки
+            <input type="text" id="purchaseAddress" required>
+        </label>
+        <label>Оплата
+            <select id="purchasePayment">
+            <option>Наличные</option>
+            <option>Карта при получении</option>
+            <option>Онлайн (в разработке)</option>
+            </select>
+        </label>
+
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+            <button type="submit" class="btn-primary">Оформить заказ</button>
+            <button type="button" class="btn-secondary" data-modal-cancel>Отмена</button>
+        </div>
+        </form>
+        <div id="purchaseMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

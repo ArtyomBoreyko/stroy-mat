@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Товары</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> <!-- Font Awesome для иконок -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=YOUR_API_KEY&lang=ru_RU" type="text/javascript"></script>
+    <script type="text/javascript">
+        ymaps.ready(init);
+        function init() {
+            var myMap = new ymaps.Map("map", {
+                center: [59.916365, 30.315760],
+                zoom: 15
+            });
+            var myPlacemark = new ymaps.Placemark([59.916365, 30.315760], {
+                hintContent: 'СтройМат',
+                balloonContent: 'ул. 1-я Красноармейская, 1/21, Санкт-Петербург'
+            });
+            myMap.geoObjects.add(myPlacemark);
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <img src="img/logo.png" alt="Логотип СтройМат" class="logo">
+            <nav>
+                <ul>
+                    <li><a href="index.html">О нас</a></li>
+                    <li><a href="goods.html">Товары</a></li>
+                </ul>
+            </nav>
+
+            <div class="user-area">
+                <button id="loginBtn" class="btn-primary small">Войти</button>
+                <button id="registerBtn" class="btn-secondary small">Регистрация</button>
+                <span id="userName" style="display:none; margin-left:10px; color: #fff;"></span>
+                <button id="logoutBtn" class="btn-secondary small" style="display:none; margin-left:10px;">Выйти</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h1 style="text-align: center;">Каталог товаров</h1>
+        
+        <!-- Фильтр (выпадающий список) -->
+        <div class="filter-container" style="display:flex; justify-content:center; margin:20px 0;">
+        <label for="categoryFilter" style="display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-filter"></i>
+            <select id="categoryFilter" aria-label="Фильтр по категории">
+            <option value="all">Все категории</option>
+            <option value="cement">Цемент</option>
+            <option value="bricks">Кирпич</option>
+            <option value="fillers">Наполнители</option>
+            <option value="finishing">Отделка</option>
+            <option value="wood">Дерево</option>
+            <option value="metal">Металл</option>
+            <option value="insulation">Утепление/Гипс</option>
+            </select>
+        </label>
+        </div>
+
+        
+        <div class="product-grid">
+            <div class="product-card" data-category="cement" data-id="cement">
+                <img src="img/cement.png" alt="Цемент">
+                <h3 id="cement">Цемент Portland</h3>
+                <p>450 руб/мешок (50 кг)</p>
+                <div class="card-actions">
+                    <a href="cement.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="bricks" data-id="bricks">
+                <img src="img/kirpich.png" alt="Кирпичи">
+                <h3 id="bricks">Кирпичи керамические</h3>
+                <p>25 руб/шт</p>
+                <div class="card-actions">
+                    <a href="bricks.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="fillers" data-id="sand">
+                <img src="img/pesok.jpg" alt="Песок">
+                <h3 id="sand">Песок речной</h3>
+                <p>300 руб/м³</p>
+                <div class="card-actions">
+                    <a href="sand.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="fillers" data-id="graviy">
+                <img src="img/graviy.webp" alt="Гравий">
+                <h3 id="gravel">Гравий фракция 20-40</h3>
+                <p>450 руб/м³</p>
+                <div class="card-actions">
+                    <a href="gravel.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="finishing" data-id="paint">
+                <img src="img/kraska.webp" alt="Краска">
+                <h3 id="paint">Краска акриловая</h3>
+                <p>800 руб/вёдра (10 л)</p>
+                <div class="card-actions">
+                    <a href="paint.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="finishing" data-id="tiles">
+                <img src="img/plitka.jpg" alt="Плитка">
+                <h3 id="tiles">Плитка керамическая</h3>
+                <p>500 руб/м²</p>
+                <div class="card-actions">
+                    <a href="tiles.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="wood" data-id="lumber">
+                <img src="img/pilomateriali.avif" alt="Пиломатериалы">
+                <h3 id="lumber">Пиломатериалы сосна</h3>
+                <p>1200 руб/м³</p>
+                <div class="card-actions">
+                    <a href="lumber.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="metal" data-id="rebar">
+                <img src="img/armatura.webp" alt="Арматура">
+                <h3 id="rebar">Арматура стальная</h3>
+                <p>60 руб/м</p>
+                <div class="card-actions">
+                    <a href="rebar.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="insulation" data-id="insulation">
+                <img src="img/uteplitel.jpg" alt="Утеплитель">
+                <h3 id="insulation">Утеплитель минвата</h3>
+                <p>350 руб/упаковка</p>
+                <div class="card-actions">
+                    <a href="insulation.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="insulation" data-id="drywall">
+                <img src="img/gipsokarton.jpeg" alt="Гипсокартон">
+                <h3 id="drywall">Гипсокартон лист</h3>
+                <p>400 руб/лист</p>
+                <div class="card-actions">
+                    <a href="drywall.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="finishing" data-id="roofing">
+                <img src="img/krovla.jpg" alt="Кровля">
+                <h3 id="roofing">Кровельные материалы</h3>
+                <p>1500 руб/м²</p>
+                <div class="card-actions">
+                    <a href="roofing.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+            <div class="product-card" data-category="finishing" data-id="windows">
+                <img src="img/okna.jpg" alt="Окна">
+                <h3 id="windows">Окна ПВХ</h3>
+                <p>5000 руб/шт</p>
+                <div class="card-actions">
+                    <a href="windows.html" class="btn-secondary">Подробнее</a>
+                    <button class="btn-primary buy-btn" type="button">Купить</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Адрес: 1-я Красноармейская улица, 1/21, Санкт-Петербург</p>
+        <p>Телефон: +7 (123) 456-78-90</p>
+        <div id="map"></div>
+        <p>Стройте качественно с материалами от СтройМат!</p>
+        <p>&copy; 2025 СтройМат. Все права защищены. | Качество. Надежность. Доступность.</p>
+    </footer>
+<!-- ===== Login Modal ===== -->
+    <div id="loginModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-login">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="modal-title">Войти в аккаунт</h3>
+        <form id="loginForm" class="auth-form">
+        <label>Эл. почта
+            <input type="email" id="loginEmail" required>
+        </label>
+        <label>Пароль
+            <input type="password" id="loginPassword" required>
+        </label>
+        <button type="submit" class="btn-primary">Войти</button>
+        </form>
+        <div id="loginMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- ===== Register Modal ===== -->
+    <div id="registerModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-register">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="modal-title">Создать аккаунт</h3>
+        <form id="registerForm" class="auth-form">
+        <label>Имя
+            <input type="text" id="regName" required>
+        </label>
+        <label>Эл. почта
+            <input type="email" id="regEmail" required>
+        </label>
+        <label>Пароль
+            <input type="password" id="regPassword" required>
+        </label>
+        <label>Подтвердите пароль
+            <input type="password" id="regPassword2" required>
+        </label>
+        <button type="submit" class="btn-primary">Зарегистрироваться</button>
+        </form>
+        <div id="registerMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- ===== Purchase Modal ===== -->
+    <div id="purchaseModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-purchase">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="modal-title" id="purchaseTitle">Оформление заказа</h3>
+
+        <form id="purchaseForm">
+        <input type="hidden" id="purchaseProductId">
+        <label>Товар
+            <input type="text" id="purchaseProductName" readonly>
+        </label>
+        <label>Количество
+            <input type="number" id="purchaseQty" min="1" value="1" required>
+        </label>
+        <label>Имя покупателя
+            <input type="text" id="purchaseName" required>
+        </label>
+        <label>Телефон
+            <input type="tel" id="purchasePhone" required>
+        </label>
+        <label>Адрес доставки
+            <input type="text" id="purchaseAddress" required>
+        </label>
+        <label>Оплата
+            <select id="purchasePayment">
+            <option>Наличные</option>
+            <option>Карта при получении</option>
+            <option>Онлайн (в разработке)</option>
+            </select>
+        </label>
+
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+            <button type="submit" class="btn-primary">Оформить заказ</button>
+        </div>
+        </form>
+        <div id="purchaseMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

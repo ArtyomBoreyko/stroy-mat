@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Песок речной - СтройМат</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <img src="img/logo.png" alt="Логотип СтройМат" class="logo">
+            <nav>
+                <ul>
+                    <li><a href="index.html">О нас</a></li>
+                    <li><a href="goods.html">Товары</a></li>
+                </ul>
+            </nav>
+
+            <div class="user-area">
+                <button id="loginBtn" class="btn-primary small">Войти</button>
+                <button id="registerBtn" class="btn-secondary small">Регистрация</button>
+                <span id="userName" style="display:none; margin-left:10px; color: #fff;"></span>
+                <button id="logoutBtn" class="btn-secondary small" style="display:none; margin-left:10px;">Выйти</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h1>Песок речной строительный</h1>
+        
+        <div class="product-info">
+            <img src="img/pesok.jpg" alt="Песок на стройплощадке" style="width:100%; max-width:600px; border-radius:10px;">
+            
+            <h2>Описание</h2>
+            <p>Речной песок — натуральный сыпучий материал, добытый из русел рек, очищенный от примесей. Идеален для приготовления строительных растворов благодаря округлой форме зерен.</p>
+            
+            <h2>Состав</h2>
+            <p>Кварцевые зерна (SiO2 >95%), минимальные примеси глины и органики.</p>
+            
+            <h2>Применение</h2>
+            <ul>
+                <li>Штукатурные и кладочные растворы</li>
+                <li>Бетонные смеси</li>
+                <li>Засыпка грунта и дренаж</li>
+                <li>Производство стяжек</li>
+            </ul>
+            
+            <h2>Характеристики</h2>
+            <ul>
+                <li>Фракция: 0.5-2 мм</li>
+                <li>Объем: от 1 м³</li>
+                <li>Цена: 300 руб/м³</li>
+                <li>Влажность: <5%</li>
+                <li>Производитель: "Песчаный карьер"</li>
+            </ul>
+
+            <p>Цена: 25 руб/шт</p>
+            <div style="margin-top:12px;">
+                <button class="btn-primary buy-single" data-id="sand">Купить</button>
+            </div>
+            
+            <h2>Технические характеристики</h2>
+            <table style="width:100%; border-collapse: collapse; margin:20px 0;">
+                <tr><th style="border:1px solid #ddd; padding:10px; background:#f2f2f2;">Параметр</th><th style="border:1px solid #ddd; padding:10px; background:#f2f2f2;">Значение</th></tr>
+                <tr><td style="border:1px solid #ddd; padding:10px;">Модуль крупности</td><td style="border:1px solid #ddd; padding:10px;">1.5-2.0</td></tr>
+                <tr><td style="border:1px solid #ddd; padding:10px;">Содержание глины</td><td style="border:1px solid #ddd; padding:10px;"><1%</td></tr>
+                <tr><td style="border:1px solid #ddd; padding:10px;">Плотность насыпная</td><td style="border:1px solid #ddd; padding:10px;">1.5 т/м³</td></tr>
+                <tr><td style="border:1px solid #ddd; padding:10px;">Чистота</td><td style="border:1px solid #ddd; padding:10px;">1 группа</td></tr>
+            </table>
+        </div>
+        
+        <p><a href="goods.html" style="background: #95a5a6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Вернуться в каталог</a></p>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 СтройМат. Все права защищены.</p>
+    </footer>
+
+    <!-- ===== Login Modal ===== -->
+    <div id="loginModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-login">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="modal-title">Войти в аккаунт</h3>
+        <form id="loginForm" class="auth-form">
+        <label>Эл. почта
+            <input type="email" id="loginEmail" required>
+        </label>
+        <label>Пароль
+            <input type="password" id="loginPassword" required>
+        </label>
+        <button type="submit" class="btn-primary">Войти</button>
+        </form>
+        <div id="loginMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- ===== Register Modal ===== -->
+    <div id="registerModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-register">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="modal-title">Создать аккаунт</h3>
+        <form id="registerForm" class="auth-form">
+        <label>Имя
+            <input type="text" id="regName" required>
+        </label>
+        <label>Эл. почта
+            <input type="email" id="regEmail" required>
+        </label>
+        <label>Пароль
+            <input type="password" id="regPassword" required>
+        </label>
+        <label>Подтвердите пароль
+            <input type="password" id="regPassword2" required>
+        </label>
+        <button type="submit" class="btn-primary">Зарегистрироваться</button>
+        </form>
+        <div id="registerMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- ===== Purchase Modal ===== -->
+    <div id="purchaseModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-purchase">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="modal-title" id="purchaseTitle">Оформление заказа</h3>
+
+        <form id="purchaseForm">
+        <input type="hidden" id="purchaseProductId">
+        <label>Товар
+            <input type="text" id="purchaseProductName" readonly>
+        </label>
+        <label>Количество
+            <input type="number" id="purchaseQty" min="1" value="1" required>
+        </label>
+        <label>Имя покупателя
+            <input type="text" id="purchaseName" required>
+        </label>
+        <label>Телефон
+            <input type="tel" id="purchasePhone" required>
+        </label>
+        <label>Адрес доставки
+            <input type="text" id="purchaseAddress" required>
+        </label>
+        <label>Оплата
+            <select id="purchasePayment">
+            <option>Наличные</option>
+            <option>Карта при получении</option>
+            <option>Онлайн (в разработке)</option>
+            </select>
+        </label>
+
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+            <button type="submit" class="btn-primary">Оформить заказ</button>
+        </div>
+        </form>
+        <div id="purchaseMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+Place your images here (logo.png, kirpich.png, cement.png, etc.).

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>СтройМат - Строительные материалы</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=YOUR_API_KEY&lang=ru_RU" type="text/javascript"></script>
+    <script type="text/javascript">
+        ymaps.ready(init);
+        function init() {
+            var myMap = new ymaps.Map("map", {
+                center: [59.916365, 30.315760],
+                zoom: 15
+            });
+            var myPlacemark = new ymaps.Placemark([59.916365, 30.315760], {
+                hintContent: 'СтройМат',
+                balloonContent: 'ул. 1-я Красноармейская, 1/21, Санкт-Петербург'
+            });
+            myMap.geoObjects.add(myPlacemark);
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <img src="img/logo.png" alt="Логотип СтройМат" class="logo">
+            <nav>
+                <ul>
+                    <li><a href="index.html">О нас</a></li>
+                    <li><a href="goods.html">Товары</a></li>
+                </ul>
+            </nav>
+
+             <div class="user-area">
+                <button id="loginBtn" class="btn-primary small">Войти</button>
+                <button id="registerBtn" class="btn-secondary small">Регистрация</button>
+                <span id="userName" style="display:none; margin-left:10px; color: #fff;"></span>
+                <button id="logoutBtn" class="btn-secondary small" style="display:none; margin-left:10px;">Выйти</button>
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <section class="hero">
+            <h1>Добро пожаловать в СтройМат!</h1>
+            <p>Мы предлагаем широкий ассортимент строительных материалов высшего качества по доступным ценам. От цемента и кирпича до инструментов и отделочных материалов — всё для вашего строительства!</p>
+            <div class="hero-buttons">
+                <a href="goods.html" class="btn-primary">Каталог товаров</a>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>О компании СтройМат</h2>
+                    <p>СтройМат — ведущий поставщик строительных материалов в Санкт-Петербурге с 2015 года. Мы начали как маленькая команда энтузиастов, а сегодня сотрудничаем с более 500 подрядчиками. Наша миссия — сделать строительство доступным и качественным, предлагая только проверенные материалы от ведущих производителей.</p>
+                    <p>Мы гордимся своим складом на 5000 м², быстрой доставкой по городу и командой из 50 специалистов, готовых помочь с выбором.</p>
+                </div>
+                <!-- <img src="img/u.webp" alt="Склад СтройМат" class="about-image"> -->
+            </div>
+        </section>
+
+        <section class="advantages">
+            <h2>Наши преимущества</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3>Гарантия качества</h3>
+                        <p>Все материалы сертифицированы, с гарантией от производителей.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3>Доставка по городу</h3>
+                        <p>Бесплатно от 20 000 руб., в день заказа.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3>Консультации специалистов</h3>
+                        <p>Бесплатные расчеты и рекомендации от экспертов.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3>Оптовые цены</h3>
+                        <p>Скидки до 30% для постоянных клиентов и крупных заказов.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonials">
+            <h2>Что говорят наши клиенты</h2>
+            <div class="testimonials-slider">
+                <div class="slide active">
+                    <p>"Отличный сервис! Доставили кирпич в день заказа, качество на высоте."</p>
+                    <span class="author">— Иван П., подрядчик</span>
+                </div>
+                <div class="slide">
+                    <p>"Широкий выбор, цены ниже рынка. Рекомендую для ремонта."</p>
+                    <span class="author">— Мария С., частный клиент</span>
+                </div>
+                <div class="slide">
+                    <p>"Профессиональная консультация помогла сэкономить на материалах."</p>
+                    <span class="author">— Алексей К., строительная фирма</span>
+                </div>
+                <div class="slide">
+                    <p>"Быстрая доставка и отличное качество цемента. Будем заказывать снова!"</p>
+                    <span class="author">— Ольга М., дизайнер</span>
+                </div>
+                <button class="slider-prev"><i class="fas fa-chevron-left"></i></button>
+                <button class="slider-next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
+
+        <!-- Почему выбирают СтройМат? — расширенный аккордеон -->
+        <section class="why-us">
+            <h2>Почему выбирают СтройМат?</h2>
+            <p class="why-intro">Мы предлагаем не просто материалы, а комплексное решение для вашего строительства. Узнайте, что делает нас лидером на рынке.</p>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <i class="fas fa-warehouse"></i>
+                        <h3>Большой склад (5000 м²)</h3>
+                        <span class="accordion-toggle">+</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p>Наш склад в Санкт-Петербурге позволяет хранить тысячи тонн материалов, обеспечивая мгновенную отгрузку. Мы сотрудничаем с производителями напрямую, что гарантирует свежесть и качество. Доступны редкие позиции, такие как импортный цемент или специальная арматура, с доставкой в день заказа.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <i class="fas fa-users"></i>
+                        <h3>500+ довольных клиентов</h3>
+                        <span class="accordion-toggle">+</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p>От частных мастеров до крупных строительных фирм — наши клиенты возвращаются за надежностью. Более 80% заказов — повторные. Мы гордимся отзывами о скорости и сервисе, с рейтингом 4.8/5 на независимых платформах. Присоединяйтесь к сообществу профессионалов!</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <i class="fas fa-tools"></i>
+                        <h3>50 специалистов</h3>
+                        <span class="accordion-toggle">+</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p>Наша команда — инженеры, логисты и консультанты с опытом >10 лет. Они помогут рассчитать объемы, подобрать аналоги и даже спроектировать закупку под ваш проект. Бесплатные консультации по телефону или на складе — от выбора цемента до оптимизации бюджета.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h3>10 лет на рынке</h3>
+                        <span class="accordion-toggle">+</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p>С 2015 года мы эволюционировали от локального поставщика до регионального лидера. За это время прошли тысячи проектов — от жилых домов до коммерческих объектов. Наш опыт позволяет предлагать эксклюзивные скидки и партнерства с брендами вроде Knauf и Rehau.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <i class="fas fa-boxes"></i>
+                        <h3>Широкий ассортимент</h3>
+                        <span class="accordion-toggle">+</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p>Более 1000 наименований — от базового цемента до премиум-отделки. Мы обновляем каталог ежемесячно, добавляя новинки (экологичные утеплители, антикоррозийную арматуру). Полный цикл: от закупки до доставки, с опцией комплектации под проект.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <i class="fas fa-leaf"></i>
+                        <h3>Экологичные материалы</h3>
+                        <span class="accordion-toggle">+</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p>80% товаров — с сертификатами экологической безопасности (без вредных добавок, перерабатываемые). Мы продвигаем "зеленое" строительство: био-краски, натуральную древесину, низкоуглеродный цемент. Для партнеров — скидки на устойчивые опции, плюс консультации по LEED-стандартам.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Адрес: 1-я Красноармейская улица, 1/21, Санкт-Петербург</p>
+        <p>Телефон: +7 (123) 456-78-90</p>
+        <div id="map"></div>
+        <p>Стройте качественно с материалами от СтройМат!</p>
+        <p>&copy; 2025 СтройМат. Все права защищены. | Качество. Надежность. Доступность.</p>
+    </footer>
+
+    <!-- ===== Login Modal ===== -->
+    <div id="loginModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-login">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="modal-title">Войти в аккаунт</h3>
+        <form id="loginForm" class="auth-form">
+        <label>Эл. почта
+            <input type="email" id="loginEmail" required>
+        </label>
+        <label>Пароль
+            <input type="password" id="loginPassword" required>
+        </label>
+        <button type="submit" class="btn-primary">Войти</button>
+        </form>
+        <div id="loginMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- ===== Register Modal ===== -->
+    <div id="registerModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-register">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="modal-title">Создать аккаунт</h3>
+        <form id="registerForm" class="auth-form">
+        <label>Имя
+            <input type="text" id="regName" required>
+        </label>
+        <label>Эл. почта
+            <input type="email" id="regEmail" required>
+        </label>
+        <label>Пароль
+            <input type="password" id="regPassword" required>
+        </label>
+        <label>Подтвердите пароль
+            <input type="password" id="regPassword2" required>
+        </label>
+        <button type="submit" class="btn-primary">Зарегистрироваться</button>
+        </form>
+        <div id="registerMessage" class="auth-message" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
