@@ -147,4 +147,17 @@ app.get('/api/my-orders', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
+// добавляем отдачу статических файлов фронтенда (если разворачиваем фронт и бэкенд в одном сервисе)
+const path = require('path');
+const frontendPath = path.join(__dirname, '..', 'frontend'); // если структура server/ и frontend/ на одном уровне
+
+// Serve static assets
+app.use(express.static(frontendPath));
+
+// For SPA or to serve index.html on root and unknown routes:
+app.get('*', (req, res, next) => {
+  // если запрос к API — пропускаем дальше
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
