@@ -1,5 +1,3 @@
-// script.js — обновлённый: никакие alert() не используются; фильтр — select; SVG крестики работают
-
 // ====== Utilities ======
 async function hashPassword(password) {
     const enc = new TextEncoder();
@@ -16,6 +14,21 @@ function getCurrentUserId() { return localStorage.getItem('st_currentUser') || n
 function setCurrentUserId(id) { if (id === null) localStorage.removeItem('st_currentUser'); else localStorage.setItem('st_currentUser', id); }
 function findUserByEmail(email) { if (!email) return null; return getUsers().find(u => u.email && u.email.toLowerCase() === email.toLowerCase()); }
 function findUserById(id) { return getUsers().find(u => u.id === id); }
+
+// ====== Remote API support (optional) ======
+const API_URL = (window.API_URL && window.API_URL.replace(/\/$/, '')) || 'https://stroy-mat.onrender.com';
+// API_URL можно переопределить на странице: <script>window.API_URL='https://...';</script>
+
+function setToken(token) { if (token) localStorage.setItem('st_token', token); else localStorage.removeItem('st_token'); }
+function getToken() { return localStorage.getItem('st_token'); }
+function setRemoteUser(u) { if (u) localStorage.setItem('st_user', JSON.stringify(u)); else localStorage.removeItem('st_user'); }
+function getRemoteUser() { try { return JSON.parse(localStorage.getItem('st_user')); } catch (e) { return null; } }
+
+// helper: detect if id looks like remote numeric id
+function isRemoteProductId(id) {
+    if (!id) return false;
+    return /^\d+$/.test(String(id));
+}
 
 // ====== DOM Ready ======
 document.addEventListener('DOMContentLoaded', () => {
@@ -112,36 +125,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameEl = document.getElementById('userName');
 
     function updateUserUI() {
-        const userId = getCurrentUserId();
-        if (userId) {
-            const user = findUserById(userId);
+        const token = getToken();
+        const remoteUser = getRemoteUser();
+        const localUserId = getCurrentUserId();
+
+        if (token && remoteUser) {
+            // Remote-authenticated user
+            if (userNameEl) { userNameEl.textContent = `Здравствуйте, ${remoteUser.name}`; userNameEl.style.display = 'inline-block'; }
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (registerBtn) registerBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            return;
+        }
+
+        // Fallback to local users stored in localStorage
+        if (localUserId) {
+            const user = findUserById(localUserId);
             if (user) {
                 if (userNameEl) { userNameEl.textContent = `Здравствуйте, ${user.name}`; userNameEl.style.display = 'inline-block'; }
                 if (loginBtn) loginBtn.style.display = 'none';
                 if (registerBtn) registerBtn.style.display = 'none';
                 if (logoutBtn) logoutBtn.style.display = 'inline-block';
+                return;
             } else {
                 setCurrentUserId(null);
-                if (userNameEl) userNameEl.style.display = 'none';
-                if (loginBtn) loginBtn.style.display = '';
-                if (registerBtn) registerBtn.style.display = '';
-                if (logoutBtn) logoutBtn.style.display = 'none';
             }
-        } else {
-            if (userNameEl) userNameEl.style.display = 'none';
-            if (loginBtn) loginBtn.style.display = '';
-            if (registerBtn) registerBtn.style.display = '';
-            if (logoutBtn) logoutBtn.style.display = 'none';
         }
+
+        // Not logged in
+        if (userNameEl) userNameEl.style.display = 'none';
+        if (loginBtn) loginBtn.style.display = '';
+        if (registerBtn) registerBtn.style.display = '';
+        if (logoutBtn) logoutBtn.style.display = 'none';
     }
     updateUserUI();
 
     if (loginBtn) loginBtn.addEventListener('click', () => openModal(loginModal));
     if (registerBtn) registerBtn.addEventListener('click', () => openModal(registerModal));
     if (logoutBtn) logoutBtn.addEventListener('click', () => {
+        // remove remote token & user first
+        setToken(null);
+        setRemoteUser(null);
+
+        // then local logout fallback
         setCurrentUserId(null);
         updateUserUI();
-        // alert removed intentionally — UI updates silently
     });
 
     // close modals (close buttons + click outside)
@@ -191,11 +219,36 @@ document.addEventListener('DOMContentLoaded', () => {
             if (registerMessage) registerMessage.textContent = 'Пароли не совпадают.';
             return;
         }
-        if (findUserByEmail(email)) {
-            if (registerMessage) registerMessage.textContent = 'Пользователь с таким email уже зарегистрирован.';
-            return;
+
+        // Если настроен API — пробуем регистрация на сервере
+        if (API_URL) {
+            try {
+                const res = await fetch(API_URL + '/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password: pass })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    if (registerMessage) registerMessage.textContent = data.message || 'Ошибка регистрации на сервере.';
+                    return;
+                }
+                // сервер вернул { token, user }
+                setToken(data.token);
+                setRemoteUser(data.user);
+                if (registerMessage) registerMessage.textContent = 'Регистрация успешна. Вы вошли в систему.';
+                updateUserUI();
+                setTimeout(() => closeModal(registerModal), 1100);
+                if (registerForm) registerForm.reset();
+                return;
+            } catch (err) {
+                console.error('Register (remote) error', err);
+                if (registerMessage) registerMessage.textContent = 'Ошибка сети при регистрации.';
+                return;
+            }
         }
 
+        // fallback: локальная регистрация (без API)
         const passHash = await hashPassword(pass);
         const users = getUsers();
         const user = { id: 'u_' + Date.now(), name, email, passwordHash: passHash, created: Date.now() };
@@ -213,6 +266,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = (document.getElementById('loginEmail') && document.getElementById('loginEmail').value.trim()) || '';
         const pass = (document.getElementById('loginPassword') && document.getElementById('loginPassword').value) || '';
 
+        // If API available -> attempt remote login
+        if (API_URL) {
+            try {
+                const res = await fetch(API_URL + '/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password: pass })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    if (loginMessage) loginMessage.textContent = data.message || 'Ошибка входа на сервере.';
+                    return;
+                }
+                // success: server returns { token, user }
+                setToken(data.token);
+                setRemoteUser(data.user);
+                if (loginMessage) loginMessage.textContent = 'Вход успешен.';
+                updateUserUI();
+                setTimeout(() => closeModal(loginModal), 800);
+                if (loginForm) loginForm.reset();
+                return;
+            } catch (err) {
+                console.error('Login (remote) error', err);
+                if (loginMessage) loginMessage.textContent = 'Ошибка сети при входе.';
+                return;
+            }
+        }
+
+        // fallback: local login (existing logic)
         const user = findUserByEmail(email);
         if (!user) {
             if (loginMessage) loginMessage.textContent = 'Пользователь не найден.';
@@ -290,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if (purchaseForm) purchaseForm.addEventListener('submit', (e) => {
+    if (purchaseForm) purchaseForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const productId = document.getElementById('purchaseProductId') ? document.getElementById('purchaseProductId').value : null;
         const productName = document.getElementById('purchaseProductName') ? document.getElementById('purchaseProductName').value : null;
@@ -305,11 +387,47 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // If we have API and a token and a numeric product id -> try remote order
+        const token = getToken();
+        if (API_URL && token && isRemoteProductId(productId)) {
+            try {
+                const payload = {
+                    product_id: parseInt(productId, 10),
+                    quantity: qty,
+                    address, phone, payment_type: payment || 'Не указано'
+                };
+                const res = await fetch(API_URL + '/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    if (purchaseMessage) purchaseMessage.textContent = data.message || 'Ошибка при оформлении заказа.';
+                    return;
+                }
+                if (purchaseMessage) purchaseMessage.textContent = 'Заказ оформлен! Номер заказа: ' + (data.orderId || '—');
+                setTimeout(() => {
+                    closeModal(purchaseModal);
+                    if (purchaseForm) purchaseForm.reset();
+                    if (purchaseMessage) purchaseMessage.textContent = '';
+                }, 1500);
+                return;
+            } catch (err) {
+                console.error('Order (remote) error', err);
+                if (purchaseMessage) purchaseMessage.textContent = 'Сетевая ошибка при оформлении заказа.';
+                return;
+            }
+        }
+
+        // fallback: local order storage (existing logic)
         const order = { id: 'o_' + Date.now(), userId: getCurrentUserId(), productId, productName, qty, name, phone, address, payment, created: Date.now() };
         const orders = getOrders();
         orders.push(order);
         setOrders(orders);
-
         if (purchaseMessage) purchaseMessage.textContent = 'Заказ оформлен! Номер заказа: ' + order.id;
         setTimeout(() => {
             closeModal(purchaseModal);
@@ -342,3 +460,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 }); // DOMContentLoaded end
+
