@@ -28,9 +28,9 @@ function isRemoteProductId(id) {
 }
 
 // productMap and readiness promise
-const productMap = {}; // name.toLowerCase() -> id
+window.productMap = {}; // name.toLowerCase() -> id (глобально доступен)
 let productMappingReadyResolve;
-const productMappingReady = new Promise((res) => { productMappingReadyResolve = res; });
+window.productMappingReady = new Promise((res) => { productMappingReadyResolve = res; });
 
 // fetch products and build map
 async function fetchAndBuildProductMap() {
@@ -389,4 +389,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 }); // DOMContentLoaded end
+
 
