@@ -27,10 +27,14 @@ function isRemoteProductId(id) {
   return /^\d+$/.test(String(id));
 }
 
-// productMap and readiness promise
-window.productMap = {}; // name.toLowerCase() -> id (глобально доступен)
+// productMap and readiness promise (глобально и локально доступны)
+window.productMap = window.productMap || {}; // name.toLowerCase() -> id (глобально доступен)
 let productMappingReadyResolve;
-window.productMappingReady = new Promise((res) => { productMappingReadyResolve = res; });
+// создаём глобальную и локальную переменную-прощёлку, чтобы код мог обратиться как к productMap, так и к window.productMap
+window.productMappingReady = window.productMappingReady || new Promise((res) => { productMappingReadyResolve = res; });
+// локальные алиасы, которые использует остальной скрипт:
+const productMap = window.productMap;
+const productMappingReady = window.productMappingReady;
 
 // fetch products and build map
 async function fetchAndBuildProductMap() {
@@ -389,5 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 }); // DOMContentLoaded end
+
 
 
