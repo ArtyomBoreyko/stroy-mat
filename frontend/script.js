@@ -30,16 +30,59 @@ function isRemoteProductId(id) {
     return /^\d+$/.test(String(id));
 }
 
+// productMap: name.toLowerCase() -> id (populated from API)
+const productMap = {};
+
 // ====== DOM Ready ======
 document.addEventListener('DOMContentLoaded', () => {
+
+    /* ------------------- Try to fetch products list and map IDs ------------------- */
+    (async function fetchAndMapProductIds() {
+        if (!API_URL) {
+            console.info('API_URL not set — skipping product mapping.');
+            return;
+        }
+        try {
+            const res = await fetch(API_URL + '/api/products');
+            if (!res.ok) {
+                console.warn('Products fetch failed:', res.status);
+                return;
+            }
+            const products = await res.json();
+            products.forEach(p => {
+                if (p && p.name && p.id != null) {
+                    productMap[String(p.name).toLowerCase()] = String(p.id);
+                }
+            });
+
+            // Map existing product-card elements by dataset.name or by <h3> text
+            document.querySelectorAll('.product-card').forEach(card => {
+                const dsName = (card.dataset.name || '').toLowerCase().trim();
+                if (dsName && productMap[dsName]) {
+                    card.dataset.id = productMap[dsName];
+                } else {
+                    // try from h3 text
+                    const h3 = card.querySelector('h3');
+                    const txt = h3 ? h3.innerText.trim().toLowerCase() : '';
+                    if (txt && productMap[txt]) {
+                        card.dataset.id = productMap[txt];
+                    }
+                }
+            });
+
+            console.info('Product mapping completed. Mapped', Object.keys(productMap).length, 'products.');
+        } catch (err) {
+            console.error('Error fetching products for mapping:', err);
+        }
+    })();
 
     /* ------------------- FILTER (goods.html) — select ------------------- */
     const categoryFilter = document.getElementById('categoryFilter');
     const productCards = document.querySelectorAll('.product-card');
-    if (categoryFilter && productCards) {
+    if (categoryFilter) {
         categoryFilter.addEventListener('change', function() {
             const category = this.value;
-            productCards.forEach(card => {
+            document.querySelectorAll('.product-card').forEach(card => {
                 if (category === 'all' || card.dataset.category === category) {
                     card.style.display = 'block';
                 } else {
@@ -314,15 +357,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ------------------- PURCHASE FLOW ------------------- */
-    const buyBtns = document.querySelectorAll('.buy-btn');       // карточки
-    const buySingleBtns = document.querySelectorAll('.buy-single'); // страница товара
     const purchaseForm = document.getElementById('purchaseForm');
     const purchaseMessage = document.getElementById('purchaseMessage');
 
     function openPurchaseFor(product) {
         if (!product) product = {};
-        const id = product.id || ('p_' + Date.now());
+        let id = product.id || null;
         const name = product.name || 'Товар';
+
+        // If id is missing or non-numeric, try to resolve from productMap by name
+        if (!id || !isRemoteProductId(id)) {
+            const lookup = (product.name || product.id || '').toString().toLowerCase();
+            if (lookup && productMap[lookup]) {
+                id = productMap[lookup];
+            } else {
+                // try to find by card in DOM (if product passed was a card element)
+                if (product.element) {
+                    const dsId = product.element.dataset.id;
+                    if (dsId && isRemoteProductId(dsId)) id = dsId;
+                }
+            }
+        }
+
         const pidEl = document.getElementById('purchaseProductId');
         const pnameEl = document.getElementById('purchaseProductName');
         const qtyEl = document.getElementById('purchaseQty');
@@ -331,16 +387,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const addrEl = document.getElementById('purchaseAddress');
         const payEl = document.getElementById('purchasePayment');
 
-        if (pidEl) pidEl.value = id;
+        if (pidEl) pidEl.value = id || '';
         if (pnameEl) pnameEl.value = name;
         if (qtyEl) qtyEl.value = 1;
+
         const userId = getCurrentUserId();
         if (userId) {
             const user = findUserById(userId);
             if (user && nameEl) nameEl.value = user.name || '';
         } else {
-            if (nameEl) nameEl.value = '';
+            const ru = getRemoteUser();
+            if (ru && nameEl) nameEl.value = ru.name || '';
+            else if (nameEl) nameEl.value = '';
         }
+
         if (phoneEl) phoneEl.value = '';
         if (addrEl) addrEl.value = '';
         if (payEl) payEl.selectedIndex = 0;
@@ -348,33 +408,36 @@ document.addEventListener('DOMContentLoaded', () => {
         openModal(purchaseModal);
     }
 
-    buyBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const card = e.target.closest('.product-card');
-            if (!card) return;
-            const id = card.dataset.id || ('p_' + Date.now());
-            const name = card.dataset.name || (card.querySelector('h3') && card.querySelector('h3').innerText) || 'Товар';
-            openPurchaseFor({ id, name });
-        });
+    // Delegated click handler for buy buttons (works for dynamic content)
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.buy-btn');
+        if (!btn) return;
+        const card = btn.closest('.product-card');
+        if (!card) return;
+        const id = card.dataset.id || null;
+        const name = card.dataset.name || (card.querySelector('h3') && card.querySelector('h3').innerText) || 'Товар';
+        openPurchaseFor({ id, name, element: card });
     });
 
-    buySingleBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const el = e.target;
-            const id = el.dataset.id || el.getAttribute('data-id') || null;
-            const nameAttr = el.dataset.name || el.getAttribute('data-name') || null;
-            let resolvedName = nameAttr;
-            if (!resolvedName) {
-                const h1 = document.querySelector('main h1') || document.querySelector('h1');
-                if (h1) resolvedName = h1.innerText.trim();
-            }
-            openPurchaseFor({ id: id || ('p_' + Date.now()), name: resolvedName || 'Товар' });
-        });
+    // Delegated click handler for single-product buy buttons (on product pages)
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.buy-single');
+        if (!btn) return;
+        // try to read data-id / data-name on the button
+        const id = btn.dataset.id || btn.getAttribute('data-id') || null;
+        const nm = btn.dataset.name || btn.getAttribute('data-name') || null;
+        let resolvedName = nm;
+        if (!resolvedName) {
+            const h1 = document.querySelector('main h1') || document.querySelector('h1');
+            if (h1) resolvedName = h1.innerText.trim();
+        }
+        openPurchaseFor({ id: id || null, name: resolvedName || 'Товар' });
     });
 
     if (purchaseForm) purchaseForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const productId = document.getElementById('purchaseProductId') ? document.getElementById('purchaseProductId').value : null;
+        const pidEl = document.getElementById('purchaseProductId');
+        let productId = pidEl ? (pidEl.value || '').toString().trim() : '';
         const productName = document.getElementById('purchaseProductName') ? document.getElementById('purchaseProductName').value : null;
         const qty = document.getElementById('purchaseQty') ? parseInt(document.getElementById('purchaseQty').value) || 1 : 1;
         const name = document.getElementById('purchaseName') ? document.getElementById('purchaseName').value.trim() : '';
@@ -387,6 +450,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Try to resolve numeric id if productId is missing or non-numeric
+        if (!isRemoteProductId(productId)) {
+            const keyByName = (productName || '').toString().toLowerCase();
+            if (keyByName && productMap[keyByName]) {
+                productId = productMap[keyByName];
+            }
+        }
+
         // If we have API and a token and a numeric product id -> try remote order
         const token = getToken();
         if (API_URL && token && isRemoteProductId(productId)) {
@@ -396,6 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     quantity: qty,
                     address, phone, payment_type: payment || 'Не указано'
                 };
+                console.info('Sending order to API', payload);
                 const res = await fetch(API_URL + '/api/orders', {
                     method: 'POST',
                     headers: {
@@ -407,9 +479,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 if (!res.ok) {
                     if (purchaseMessage) purchaseMessage.textContent = data.message || 'Ошибка при оформлении заказа.';
+                    console.warn('Order API error', data);
                     return;
                 }
-                if (purchaseMessage) purchaseMessage.textContent = 'Заказ оформлен! Номер заказа: ' + (data.orderId || '—');
+                if (purchaseMessage) purchaseMessage.textContent = 'Заказ оформлен! Номер заказа: ' + (data.orderId || data.id || '—');
                 setTimeout(() => {
                     closeModal(purchaseModal);
                     if (purchaseForm) purchaseForm.reset();
