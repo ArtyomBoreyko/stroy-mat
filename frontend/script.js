@@ -1,4 +1,4 @@
-// frontend/script.js — исправленная финальная версия
+// frontend/script.js — улучшенная версия: жёсткий фикс для оформления заказов
 // ================= Utilities =================
 async function hashPassword(password) {
   const enc = new TextEncoder();
@@ -26,47 +26,39 @@ function getRemoteUser() { try { return JSON.parse(localStorage.getItem('st_user
 function isRemoteProductId(id) { if (!id) return false; return /^\d+$/.test(String(id)); }
 
 // ================= productMap / readiness (global + local aliases) =================
-// ensure global exists
 window.productMap = window.productMap || {}; // name.lower -> id
-// create a ready-promise accessible both globally and locally
 if (!window._productMappingReadyController) {
   let _resolve;
   const p = new Promise((res) => { _resolve = res; });
   window._productMappingReadyController = { promise: p, resolve: _resolve };
 }
 window.productMappingReady = window._productMappingReadyController.promise;
-
-// local aliases used by script
 const productMap = window.productMap;
 const productMappingReady = window.productMappingReady;
 
-// function to fetch products and build map
+// fetch & build product map (first attempt)
 async function fetchAndBuildProductMap() {
   try {
     const res = await fetch(API_URL + '/api/products');
     if (!res.ok) {
       console.warn('Products fetch failed with status', res.status);
-      // resolve with false (so waiters don't hang forever)
       try { window._productMappingReadyController.resolve(false); } catch(e){}
       return false;
     }
     const products = await res.json();
-    // build map: prefer exact title from DB (trimmed lower)
     products.forEach(p => {
       if (p && p.name && p.id != null) {
         productMap[String(p.name).trim().toLowerCase()] = String(p.id);
       }
     });
-    // set dataset.id on existing product-card elements by <h3> text (most reliable)
+    // set dataset.id on cards (match by h3)
     document.querySelectorAll('.product-card').forEach(card => {
       const h3 = card.querySelector('h3');
       const title = h3 ? h3.innerText.trim().toLowerCase() : (card.dataset.name || '').trim().toLowerCase();
-      if (title && productMap[title]) {
-        card.dataset.id = productMap[title];
-      }
+      if (title && productMap[title]) card.dataset.id = productMap[title];
     });
-    console.info('Product map loaded, keys:', Object.keys(productMap).length);
-    window._productMappingReadyController.resolve(true);
+    console.info('Product map built keys=', Object.keys(productMap).length);
+    try { window._productMappingReadyController.resolve(true); } catch(e){}
     return true;
   } catch (err) {
     console.error('Error fetching products:', err);
@@ -74,13 +66,12 @@ async function fetchAndBuildProductMap() {
     return false;
   }
 }
-// call it asap (do not block)
-fetchAndBuildProductMap().catch(() => { /* ignore */ });
+fetchAndBuildProductMap().catch(()=>{});
 
 // ================= DOM Ready =================
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ==== UI helpers ====
+  // UI helpers
   function openModal(mod) {
     if (!mod) return;
     mod.style.display = 'flex';
@@ -94,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { try { mod.style.display = 'none'; } catch (e) {} }, 200);
   }
 
-  // ==== Filter (select) ====
+  // Filter select
   const categoryFilter = document.getElementById('categoryFilter');
   if (categoryFilter) {
     categoryFilter.addEventListener('change', function() {
@@ -107,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     categoryFilter.dispatchEvent(new Event('change'));
   }
 
-  // ==== Header / Auth UI ====
+  // Header/auth
   const loginModal = document.getElementById('loginModal');
   const registerModal = document.getElementById('registerModal');
   const purchaseModal = document.getElementById('purchaseModal');
@@ -145,14 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) logoutBtn.style.display = 'none';
   }
   updateUserUI();
-
   if (loginBtn) loginBtn.addEventListener('click', () => openModal(loginModal));
   if (registerBtn) registerBtn.addEventListener('click', () => openModal(registerModal));
-  if (logoutBtn) logoutBtn.addEventListener('click', () => {
-    setToken(null); setRemoteUser(null); setCurrentUserId(null); updateUserUI();
-  });
+  if (logoutBtn) logoutBtn.addEventListener('click', () => { setToken(null); setRemoteUser(null); setCurrentUserId(null); updateUserUI(); });
 
-  // close modals
+  // close modal handlers
   document.querySelectorAll('.modal').forEach(mod => {
     const close = mod.querySelector('.modal-close');
     if (close) close.addEventListener('click', () => closeModal(mod));
@@ -162,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = btn.closest('.modal'); if (modal) closeModal(modal);
   }));
 
-  // ==== Auth forms ====
+  // Auth forms (unchanged)
   const registerForm = document.getElementById('registerForm');
   const loginForm = document.getElementById('loginForm');
   const registerMessage = document.getElementById('registerMessage');
@@ -180,8 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(API_URL + '/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, email, password: pass})});
       const data = await res.json();
       if (!res.ok) { if (registerMessage) registerMessage.textContent = data.message || 'Ошибка регистрации.'; return; }
-      setToken(data.token); setRemoteUser(data.user);
-      if (registerMessage) registerMessage.textContent = 'Регистрация успешна. Вы вошли в систему.'; updateUserUI();
+      setToken(data.token); setRemoteUser(data.user); if (registerMessage) registerMessage.textContent = 'Регистрация успешна. Вы вошли в систему.'; updateUserUI();
       setTimeout(() => closeModal(registerModal), 1100); registerForm.reset(); return;
     } catch (err) {
       console.error('Register remote error', err);
@@ -213,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ==== Purchase flow ====
+  // Purchase flow (FIXED)
   const purchaseForm = document.getElementById('purchaseForm');
   const purchaseMessage = document.getElementById('purchaseMessage');
 
@@ -221,11 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!product) product = {};
     let id = product.id || null;
     const name = product.name || 'Товар';
-
-    // wait for mapping attempt but don't block forever (2.5s)
     await Promise.race([productMappingReady, new Promise(r => setTimeout(() => r(false), 2500))]);
 
-    // resolve id from element dataset
     if (!id || !isRemoteProductId(id)) {
       if (product.element) {
         const ds = product.element.dataset.id;
@@ -294,61 +278,177 @@ document.addEventListener('DOMContentLoaded', () => {
     openPurchaseFor({ id: id || null, name: resolvedName || 'Товар' });
   });
 
+  // Helper: try to re-fetch products (force) and rebuild map
+  async function forceFetchProducts() {
+    try {
+      const res = await fetch(API_URL + '/api/products');
+      if (!res.ok) { console.warn('forceFetchProducts failed', res.status); return false; }
+      const products = await res.json();
+      // rebuild productMap (overwrite)
+      Object.keys(productMap).forEach(k => delete productMap[k]);
+      products.forEach(p => {
+        if (p && p.name && p.id != null) productMap[String(p.name).trim().toLowerCase()] = String(p.id);
+      });
+      // set dataset.id on cards
+      document.querySelectorAll('.product-card').forEach(card => {
+        const h3 = card.querySelector('h3');
+        const title = h3 ? h3.innerText.trim().toLowerCase() : (card.dataset.name || '').trim().toLowerCase();
+        if (title && productMap[title]) card.dataset.id = productMap[title];
+      });
+      console.info('forceFetchProducts: keys=', Object.keys(productMap).length);
+      return true;
+    } catch (err) {
+      console.error('forceFetchProducts error', err);
+      return false;
+    }
+  }
+
+  // Submit handler — улучшенный, с логированием и форс-резолвом id
   if (purchaseForm) purchaseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const pidEl = document.getElementById('purchaseProductId');
-    let productId = pidEl ? (pidEl.value || '').toString().trim() : '';
-    const productName = document.getElementById('purchaseProductName') ? document.getElementById('purchaseProductName').value : null;
-    const qty = document.getElementById('purchaseQty') ? parseInt(document.getElementById('purchaseQty').value) || 1 : 1;
-    const name = document.getElementById('purchaseName') ? document.getElementById('purchaseName').value.trim() : '';
-    const phone = document.getElementById('purchasePhone') ? document.getElementById('purchasePhone').value.trim() : '';
-    const address = document.getElementById('purchaseAddress') ? document.getElementById('purchaseAddress').value.trim() : '';
-    const payment = document.getElementById('purchasePayment') ? document.getElementById('purchasePayment').value : '';
 
-    if (!name || !phone || !address) { if (purchaseMessage) purchaseMessage.textContent = 'Заполните все обязательные поля.'; return; }
+    console.group('ORDER DEBUG');
+    try {
+      const pidEl = document.getElementById('purchaseProductId');
+      let productId = pidEl ? (pidEl.value || '').toString().trim() : '';
+      const productName = document.getElementById('purchaseProductName') ? document.getElementById('purchaseProductName').value : '';
+      const qty = document.getElementById('purchaseQty') ? parseInt(document.getElementById('purchaseQty').value) || 1 : 1;
+      const name = document.getElementById('purchaseName') ? document.getElementById('purchaseName').value.trim() : '';
+      const phone = document.getElementById('purchasePhone') ? document.getElementById('purchasePhone').value.trim() : '';
+      const address = document.getElementById('purchaseAddress') ? document.getElementById('purchaseAddress').value.trim() : '';
+      const payment = document.getElementById('purchasePayment') ? document.getElementById('purchasePayment').value : '';
 
-    // ensure mapping attempted (but with timeout)
-    await Promise.race([productMappingReady, new Promise(r => setTimeout(r, 2000))]);
+      console.log('initial productId:', productId);
+      console.log('productName:', productName);
+      console.log('token present:', !!getToken());
+      console.log('productMap size:', Object.keys(productMap).length);
 
-    if (!isRemoteProductId(productId)) {
-      const keyByName = (productName || '').toString().toLowerCase();
-      if (keyByName && productMap[keyByName]) productId = productMap[keyByName];
-    }
-
-    const token = getToken();
-    if (API_URL && token && isRemoteProductId(productId)) {
-      try {
-        const payload = { product_id: parseInt(productId, 10), quantity: qty, address, phone, payment_type: payment || 'Не указано' };
-        console.info('Sending order to API', payload);
-        const res = await fetch(API_URL + '/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json().catch(()=>null);
-        if (!res.ok) {
-          if (purchaseMessage) purchaseMessage.textContent = data?.message || 'Ошибка при оформлении заказа.';
-          console.warn('Order API error', res.status, data);
-          return;
-        }
-        if (purchaseMessage) purchaseMessage.textContent = 'Заказ оформлен! Номер заказа: ' + (data.orderId || data.id || '—');
-        setTimeout(() => { closeModal(purchaseModal); purchaseForm.reset(); if (purchaseMessage) purchaseMessage.textContent = ''; }, 1500);
-        return;
-      } catch (err) {
-        console.error('Order remote error', err);
-        if (purchaseMessage) purchaseMessage.textContent = 'Сетевая ошибка при оформлении заказа.';
+      // quick validation
+      if (!name || !phone || !address) {
+        if (purchaseMessage) purchaseMessage.textContent = 'Заполните все обязательные поля.';
+        console.warn('Validation failed: empty name/phone/address');
+        console.groupEnd();
         return;
       }
-    }
 
-    // fallback local
-    const order = { id: 'o_' + Date.now(), userId: getCurrentUserId(), productId, productName, qty, name, phone, address, payment, created: Date.now() };
-    const orders = getOrders(); orders.push(order); setOrders(orders);
-    if (purchaseMessage) purchaseMessage.textContent = 'Заказ оформлен (локально). Номер: ' + order.id;
-    setTimeout(() => { closeModal(purchaseModal); purchaseForm.reset(); if (purchaseMessage) purchaseMessage.textContent = ''; }, 1500);
+      // ensure mapping attempted
+      await Promise.race([productMappingReady, new Promise(r => setTimeout(() => r(false), 2000))]);
+
+      // If productId not numeric, try to resolve:
+      if (!isRemoteProductId(productId)) {
+        // first direct lookup by exact productName
+        const keyByName = (productName || '').toString().trim().toLowerCase();
+        if (keyByName && productMap[keyByName]) {
+          productId = productMap[keyByName];
+          console.log('resolved by exact name ->', productId);
+        } else {
+          // if productMap empty or failed, force fetch products once
+          if (Object.keys(productMap).length === 0) {
+            console.log('productMap empty, forcing fetch /api/products');
+            await forceFetchProducts();
+            if (keyByName && productMap[keyByName]) {
+              productId = productMap[keyByName];
+              console.log('resolved after forceFetch by exact name ->', productId);
+            }
+          }
+          // fuzzy: find first key that contains a substring of productName or vice versa
+          if (!isRemoteProductId(productId) && keyByName) {
+            const keys = Object.keys(productMap);
+            for (let k of keys) {
+              if (k.includes(keyByName) || keyByName.includes(k) || k.includes(keyByName.split(' ')[0])) {
+                productId = productMap[k];
+                console.log('resolved by fuzzy match:', k, '->', productId);
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      console.log('final productId to send:', productId, 'isNumeric?', isRemoteProductId(productId));
+
+      const token = getToken();
+
+      // If we have a numeric id and token -> attempt remote order
+      if (API_URL && token && isRemoteProductId(productId)) {
+        const payload = { product_id: parseInt(productId, 10), quantity: qty, address, phone, payment_type: payment || 'Не указано' };
+        console.info('Attempting POST /api/orders with payload', payload);
+        try {
+          const res = await fetch(API_URL + '/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload)
+          });
+          const text = await res.text();
+          let data = null;
+          try { data = JSON.parse(text); } catch(e) { data = text; }
+          console.log('response status', res.status, 'body', data);
+          if (!res.ok) {
+            if (purchaseMessage) purchaseMessage.textContent = data?.message || 'Ошибка при оформлении заказа.';
+            console.warn('Order API returned error', res.status, data);
+            console.groupEnd();
+            return;
+          }
+          // success
+          if (purchaseMessage) purchaseMessage.textContent = 'Заказ оформлен! Номер заказа: ' + (data.orderId || data.id || '—');
+          console.info('Order created on server', data);
+          setTimeout(() => { closeModal(purchaseModal); purchaseForm.reset(); if (purchaseMessage) purchaseMessage.textContent = ''; }, 1500);
+          console.groupEnd();
+          return;
+        } catch (err) {
+          console.error('Network / fetch error while creating order', err);
+          if (purchaseMessage) purchaseMessage.textContent = 'Сетевая ошибка при оформлении заказа.';
+          console.groupEnd();
+          return;
+        }
+      }
+
+      // If we are here: couldn't send remote order (missing token or productId).
+      // Try to send with product_name as last resort (we'll see server error body).
+      if (API_URL && getToken()) {
+        console.log('Trying fallback send with product_name because product_id not numeric');
+        const payload = { product_name: productName || null, quantity: qty, address, phone, payment_type: payment || 'Не указано' };
+        try {
+          const res = await fetch(API_URL + '/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+            body: JSON.stringify(payload)
+          });
+          const text = await res.text();
+          let data = null;
+          try { data = JSON.parse(text); } catch(e) { data = text; }
+          console.log('fallback response status', res.status, 'body', data);
+          if (res.ok) {
+            if (purchaseMessage) purchaseMessage.textContent = 'Заказ оформлен (fallback).';
+            setTimeout(() => { closeModal(purchaseModal); purchaseForm.reset(); if (purchaseMessage) purchaseMessage.textContent = ''; }, 1500);
+            console.groupEnd();
+            return;
+          } else {
+            if (purchaseMessage) purchaseMessage.textContent = data?.message || 'Ошибка при оформлении заказа.';
+            console.warn('Fallback server error', res.status, data);
+          }
+        } catch (err) {
+          console.error('Fallback fetch error', err);
+        }
+      }
+
+      // Final fallback: save local order and inform user (local storage)
+      const order = { id: 'o_' + Date.now(), userId: getCurrentUserId(), productId, productName, qty, name, phone, address, payment, created: Date.now() };
+      const orders = getOrders(); orders.push(order); setOrders(orders);
+      if (purchaseMessage) purchaseMessage.textContent = 'Заказ сохранён локально. Номер: ' + order.id;
+      console.warn('Order saved locally because remote send was not possible. order=', order);
+
+      setTimeout(() => { closeModal(purchaseModal); purchaseForm.reset(); if (purchaseMessage) purchaseMessage.textContent = ''; }, 1500);
+
+    } catch (err) {
+      console.error('Unexpected error in purchase submit', err);
+      if (purchaseMessage) purchaseMessage.textContent = 'Неожиданная ошибка.';
+    } finally {
+      console.groupEnd();
+    }
   });
 
-  // small UI niceties
+  // UI niceties
   const cards = document.querySelectorAll('.product-card');
   cards.forEach((c, i) => {
     c.addEventListener('mouseenter', () => c.classList.add('card-hover'));
@@ -357,14 +457,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { c.style.transition = 'opacity 300ms ease, transform 300ms ease'; c.style.opacity = 1; c.style.transform = 'translateY(0)'; }, 120 + i * 70);
   });
 
+  // Esc key closes modals
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       const modals = [loginModal, registerModal, purchaseModal];
       modals.forEach(m => { if (m) closeModal(m); });
     }
   });
+});
 
-}); // DOMContentLoaded end
 
 
 
