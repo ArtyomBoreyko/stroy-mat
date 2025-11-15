@@ -98,10 +98,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => mod.classList.add('open'), 10);
   }
   function closeModal(mod) {
-    if (!mod) return;
-    mod.classList.remove('open');
-    mod.setAttribute('aria-hidden', 'true');
-    setTimeout(() => { try { mod.style.display = 'none'; } catch (e) {} }, 200);
+  if (!mod) return;
+  // если внутри есть элемент с фокусом, снимем фокус — чтобы aria-hidden не блокировалось
+  try {
+    const focused = mod.querySelector(':focus');
+    if (focused) focused.blur();
+  } catch(e){}
+  mod.classList.remove('open');
+  mod.setAttribute('aria-hidden', 'true');
+  setTimeout(() => { try { mod.style.display = 'none'; } catch (e) {} }, 200);
   }
 
   const loginModal = document.getElementById('loginModal');
@@ -155,64 +160,91 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Purchase: ensure we force-fetch products when opening modal (if productMap empty)
   async function openPurchaseFor(product) {
-    if (!product) product = {};
-    let id = product.id || null;
-    const name = product.name || 'Товар';
+  if (!product) product = {};
+  let id = product.id || null;
+  const name = product.name || 'Товар';
 
-    // If productMap empty, force fetch now (ensures numeric ids)
-    if (Object.keys(productMap).length === 0) {
-      console.log('openPurchaseFor: productMap empty — forcing products fetch before opening modal');
-      await forceFetchProducts();
-    } else {
-      // wait a short time for initial mapping if still resolving
-      await Promise.race([productMappingReady, new Promise(r => setTimeout(() => r(false), 800))]);
-    }
+  // Если мэппинг пуст — форсим его
+  if (Object.keys(productMap).length === 0) {
+    console.log('openPurchaseFor: productMap empty — forcing fetch before opening');
+    await forceFetchProducts();
+  } else {
+    await Promise.race([productMappingReady, new Promise(r => setTimeout(() => r(false), 800))]);
+  }
 
-    // resolve id (prefer dataset numeric, then match by name)
-    if (!id || !isRemoteProductId(id)) {
-      if (product.element) {
-        const ds = product.element.dataset.id;
-        if (ds && isRemoteProductId(ds)) id = ds;
+  // Попытаться резолвить id:
+  // 1) dataset.id если есть и числовой
+  if ((!id || !isRemoteProductId(id)) && product.element) {
+    const ds = product.element.dataset.id;
+    if (ds && isRemoteProductId(ds)) id = ds;
+  }
+
+  // 2) exact match по h3 (локально)
+  if ((!id || !isRemoteProductId(id)) && product.element) {
+    const h3 = product.element.querySelector('h3');
+    if (h3) {
+      const t = h3.innerText.trim().toLowerCase();
+      if (productMap[t]) {
+        id = productMap[t];
+        console.log('openPurchaseFor: resolved id by h3 exact match ->', id, 'for', t);
       }
-      const lookup = (product.name || product.id || '').toString().trim().toLowerCase();
-      if ((!id || !isRemoteProductId(id)) && lookup && productMap[lookup]) id = productMap[lookup];
-      if ((!id || !isRemoteProductId(id)) && product.element) {
-        const h3 = product.element.querySelector('h3');
-        if (h3) {
-          const t = h3.innerText.trim().toLowerCase();
-          if (productMap[t]) id = productMap[t];
+    }
+  }
+
+  // 3) exact match по name, если был передан name
+  if ((!id || !isRemoteProductId(id)) && product.name) {
+    const key = product.name.trim().toLowerCase();
+    if (productMap[key]) {
+      id = productMap[key];
+      console.log('openPurchaseFor: resolved id by name ->', id, 'for', key);
+    }
+  }
+
+  // 4) fuzzy match (подстрока) по ключам productMap
+  if (!isRemoteProductId(id)) {
+    const lookup = (product.name || (product.element && (product.element.querySelector('h3') && product.element.querySelector('h3').innerText)) || '').toString().trim().toLowerCase();
+    if (lookup) {
+      for (const k of Object.keys(productMap)) {
+        if (k.includes(lookup) || lookup.includes(k) || k.includes(lookup.split(' ')[0])) {
+          id = productMap[k];
+          console.log('openPurchaseFor: resolved by fuzzy match', k, '->', id);
+          break;
         }
       }
     }
-
-    const pidEl = document.getElementById('purchaseProductId');
-    const pnameEl = document.getElementById('purchaseProductName');
-    const qtyEl = document.getElementById('purchaseQty');
-    const nameEl = document.getElementById('purchaseName');
-    const phoneEl = document.getElementById('purchasePhone');
-    const addrEl = document.getElementById('purchaseAddress');
-    const payEl = document.getElementById('purchasePayment');
-
-    if (pidEl) pidEl.value = id || '';
-    if (pnameEl) pnameEl.value = name;
-    if (qtyEl) qtyEl.value = 1;
-
-    const userId = getCurrentUserId();
-    if (userId) {
-      const user = findUserById(userId);
-      if (user && nameEl) nameEl.value = user.name || '';
-    } else {
-      const ru = getRemoteUser();
-      if (ru && nameEl) nameEl.value = ru.name || '';
-      else if (nameEl) nameEl.value = '';
-    }
-
-    if (phoneEl) phoneEl.value = '';
-    if (addrEl) addrEl.value = '';
-    if (payEl) payEl.selectedIndex = 0;
-    if (document.getElementById('purchaseMessage')) document.getElementById('purchaseMessage').textContent = '';
-    openModal(purchaseModal);
   }
+
+  // Проставляем значения в форму
+  const pidEl = document.getElementById('purchaseProductId');
+  const pnameEl = document.getElementById('purchaseProductName');
+  const qtyEl = document.getElementById('purchaseQty');
+  const nameEl = document.getElementById('purchaseName');
+  const phoneEl = document.getElementById('purchasePhone');
+  const addrEl = document.getElementById('purchaseAddress');
+  const payEl = document.getElementById('purchasePayment');
+
+  if (pidEl) pidEl.value = isRemoteProductId(id) ? id : '';
+  if (pnameEl) pnameEl.value = name;
+  if (qtyEl) qtyEl.value = 1;
+
+  const userId = getCurrentUserId();
+  if (userId) {
+    const user = findUserById(userId);
+    if (user && nameEl) nameEl.value = user.name || '';
+  } else {
+    const ru = getRemoteUser();
+    if (ru && nameEl) nameEl.value = ru.name || '';
+    else if (nameEl) nameEl.value = '';
+  }
+
+  if (phoneEl) phoneEl.value = '';
+  if (addrEl) addrEl.value = '';
+  if (payEl) payEl.selectedIndex = 0;
+  if (document.getElementById('purchaseMessage')) document.getElementById('purchaseMessage').textContent = '';
+
+  console.log('openPurchaseFor: final purchaseProductId:', (pidEl && pidEl.value) || '(empty)', 'productMap keys:', Object.keys(productMap).length);
+  openModal(purchaseModal);
+}
 
   // delegated click handlers for buy buttons
   document.addEventListener('click', (e) => {
@@ -385,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 }); // DOMContentLoaded end
+
 
 
 
